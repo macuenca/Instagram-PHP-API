@@ -22,6 +22,8 @@ class Instagram {
         'user_follows' => 'https://api.instagram.com/v1/users/%d/follows?access_token=%s',
         'user_followed_by' => 'https://api.instagram.com/v1/users/%d/followed-by?access_token=%s',
         'user_requested_by' => 'https://api.instagram.com/v1/users/self/requested-by?access_token=%s',
+        'user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?access_token=%s',
+        'modify_user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?action=%s&access_token=%s'
     );
 
     /**
@@ -183,6 +185,30 @@ class Instagram {
         $this->_init();
         $endpointUrl = sprintf($this->_endpointUrls['user_requested_by'], $this->_accessToken);
         $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Get information about the current user's relationship (follow/following/etc) to another user.
+     * @param integer $id
+     */
+    public function getUserRelationship($id) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['user_relationship'], $id, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Modify the relationship between the current user and the target user
+     * In order to perform this action the scope must be set to 'relationships'
+     * @param integer $id
+     * @param string $action. One of follow/unfollow/block/unblock/approve/deny
+     */
+    public function modifyUserRelationship($id, $action) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['modify_user_relationship'], $id, $action, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl, Zend_Http_Client::POST);
         return $this->_getHttpClientResponse();
     }
 }
