@@ -1,5 +1,21 @@
 <?php
-
+/**
+ * Instagram PHP implementation API
+ * URLs: http://www.mauriciocuenca.com/
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 require_once 'Zend/Http/Client.php';
 
 class Instagram {
@@ -58,6 +74,10 @@ class Instagram {
      */
     protected $_httpClient = null;
 
+    /**
+     * Constructor needs to receive the config as an array
+     * @param mixed $config
+     */
     public function __construct($config = null) {
         $this->_config = $config;
         if (empty($config)) {
@@ -65,6 +85,10 @@ class Instagram {
         }
     }
 
+    /**
+     * The init method is triggered on every call to retrieve the
+     * access token in case is not in the current instance.
+     */
     protected function _init() {
         // Requests the OAuth token if none passed 
         if ($this->_accessToken == null) {
