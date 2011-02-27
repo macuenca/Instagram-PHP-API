@@ -23,7 +23,22 @@ class Instagram {
         'user_followed_by' => 'https://api.instagram.com/v1/users/%d/followed-by?access_token=%s',
         'user_requested_by' => 'https://api.instagram.com/v1/users/self/requested-by?access_token=%s',
         'user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?access_token=%s',
-        'modify_user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?action=%s&access_token=%s'
+        'modify_user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?action=%s&access_token=%s',
+        'media' => 'https://api.instagram.com/v1/media/%d?access_token=%s',
+        'media_search' => 'https://api.instagram.com/v1/media/search?lat=%s&lng=%s&max_timestamp=%d&min_timestamp=%d&distance=%d&access_token=%s',
+        'media_popular' => 'https://api.instagram.com/v1/media/popular?access_token=%s',
+        'media_comments' => 'https://api.instagram.com/v1/media/%d/comments?access_token=%s',
+        'post_media_comment' => 'https://api.instagram.com/v1/media/%d/comments?access_token=%s',
+        'delete_media_comment' => 'https://api.instagram.com/v1/media/%d/comments?comment_id=%d&access_token=%s',
+        'likes' => 'https://api.instagram.com/v1/media/%d/likes?access_token=%s',
+        'post_like' => 'https://api.instagram.com/v1/media/%d/likes,',
+        'remove_like' => 'https://api.instagram.com/v1/media/%d/likes?access_token=%s',
+        'tags' => 'https://api.instagram.com/v1/tags/%s?access_token=%s',
+        'tags_recent' => 'https://api.instagram.com/v1/tags/%s/media/recent?max_id=%d&min_id=%d&access_token=%s',
+        'tags_search' => 'https://api.instagram.com/v1/tags/search?q=%s&access_token=%s',
+        'locations' => 'https://api.instagram.com/v1/locations/%d?access_token=%s',
+        'locations_recent' => 'https://api.instagram.com/v1/locations/%d/media/recent/?max_id=%d&min_id=%d&max_timestamp=%d&min_timestamp=%d&access_token=%s',
+        'locations_search' => 'https://api.instagram.com/v1/locations/search?lat=%s&lng=%s&foursquare_id=%d&distance=%d&access_token=%s',
     );
 
     /**
@@ -209,6 +224,183 @@ class Instagram {
         $this->_init();
         $endpointUrl = sprintf($this->_endpointUrls['modify_user_relationship'], $id, $action, $this->_accessToken);
         $this->_initHttpClient($endpointUrl, Zend_Http_Client::POST);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Get information about a media object.
+     * @param integer $mediaId
+     */
+    public function getMedia($id) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['media'], $id, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Search for media in a given area.
+     * @param float $lat
+     * @param float $lng
+     * @param integer $maxTimestamp
+     * @param integer $minTimestamp
+     * @param integer $distance
+     */
+    public function mediaSearch($lat, $lng, $maxTimestamp = '', $minTimestamp = '', $distance = '') {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['media_search'], $lat, $lng, $maxTimestamp, $minTimestamp, $distance, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Get a list of what media is most popular at the moment.
+     */
+    public function getPopularMedia() {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['media_popular'], $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Get a full list of comments on a media.
+     * @param integer $id
+     */
+    public function getMediaComments($id) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['media_comments'], $id, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Create a comment on a media.
+     * @param integer $id
+     * @param string $text
+     */
+    public function postMediaComment($id, $text) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['post_media_comment'], $id, $text, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl, Zend_Http_Client::POST);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Remove a comment either on the authenticated user's media or authored by the authenticated user.
+     * @param integer $mediaId
+     * @param integer $commentId
+     */
+    public function deleteComment($mediaId, $commentId) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['delete_media_comment'], $mediaId, $commentId, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl, Zend_Http_Client::DELETE);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Get a list of users who have liked this media.
+     * @param integer $mediaId
+     */
+    public function getLikes($mediaId) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['likes'], $mediaId, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Set a like on this media by the currently authenticated user.
+     * @param integer $mediaId
+     */
+    public function postLike($mediaId) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['post_like'], $mediaId);
+        $this->_initHttpClient($endpointUrl, Zend_Http_Client::POST);
+        $this->_setHttpClientPostParam('access_token', $this->_accessToken);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Remove a like on this media by the currently authenticated user.
+     * @param integer $mediaId
+     */
+    public function removeLike($mediaId) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['remove_like'], $mediaId, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl, Zend_Http_Client::DELETE);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Get information about a tag object.
+     * @param string $tagName
+     */
+    public function getTags($tagName) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['tags'], $tagName, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Get a list of recently tagged media.
+     * @param string $tagName
+     * @param integer $maxId
+     * @param integer $minId
+     */
+    public function getRecentTags($tagName, $maxId = '', $minId = '') {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['tags_recent'], $tagName, $maxId, $minId, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Search for tags by name - results are ordered first as an exact match, then by popularity.
+     * @param string $tagName
+     */
+    public function searchTags($tagName) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['tags_search'], urlencode($tagName), $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Get information about a location.
+     * @param integer $id
+     */
+    public function getLocation($id) {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['locations'], $id, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Get a list of recent media objects from a given location.
+     * @param integer $locationId
+     */
+    public function getLocationRecentMedia($id, $maxId = '', $minId = '', $maxTimestamp = '', $minTimestamp = '') {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['locations_recent'], $id, $maxId, $minId, $maxTimestamp, $minTimestamp, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Search for a location by name and geographic coordinate.
+     * @see http://instagr.am/developer/endpoints/locations/#get_locations_search
+     * @param float $lat
+     * @param float $lng
+     * @param integer $foursquareId
+     * @param integer $distance
+     */
+    public function searchLocation($lat, $lng, $foursquareId = '', $distance = '') {
+        $this->_init();
+        $endpointUrl = sprintf($this->_endpointUrls['locations_search'], $lat, $lng, $foursquareId, $distance, $this->_accessToken);
+        $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
 }
