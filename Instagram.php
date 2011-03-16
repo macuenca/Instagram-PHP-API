@@ -124,13 +124,6 @@ class Instagram {
     }
 
     /**
-     * Gets the code param received during the authorization step
-     */
-    public function getCode() {
-        return $_GET[self::RESPONSE_CODE_PARAM];
-    }
-
-    /**
      * Retrieves the OAuth token to be used in every request
      * @return string
      */
@@ -143,6 +136,22 @@ class Instagram {
         $this->_setHttpClientPostParam('code', $this->getCode());
 
         return $this->_getHttpClientResponse();
+    }
+
+    /**
+     * Sets the OAuth token to avoid consecutive explicit
+     * authentication requests
+     * @param string $accessToken
+     */
+    public function setOauthToken($accessToken) {
+        $this->_accessToken = $accessToken;
+    }
+
+    /**
+     * Gets the code param received during the authorization step
+     */
+    public function getCode() {
+        return $_GET[self::RESPONSE_CODE_PARAM];
     }
 
      /**
