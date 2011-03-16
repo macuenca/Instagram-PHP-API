@@ -139,11 +139,19 @@ class Instagram {
     }
 
     /**
+     * Returns the access token
+     * @return string
+     */
+    public function getAccessToken() {
+        return $this->_accessToken;
+    }
+
+    /**
      * Sets the OAuth token to avoid consecutive explicit
      * authentication requests
      * @param string $accessToken
      */
-    public function setOauthToken($accessToken) {
+    public function setAccessToken($accessToken) {
         $this->_accessToken = $accessToken;
     }
 
