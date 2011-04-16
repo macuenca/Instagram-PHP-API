@@ -16,7 +16,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-require_once 'Zend/Http/Client.php';
+// require_once 'Zend/Http/Client.php';
+require_once 'CurlHttpClient.php';
 
 class Instagram {
 
@@ -31,6 +32,8 @@ class Instagram {
      * @var string
      */
     protected $_endpointUrls = array(
+        'authorize' => 'https://api.instagram.com/oauth/authorize/?client_id=%s&redirect_uri=%s&response_type=%s',
+        'access_token' => 'https://api.instagram.com/oauth/access_token',
         'user' => 'https://api.instagram.com/v1/users/%d/?access_token=%s',
         'user_feed' => 'https://api.instagram.com/v1/users/self/feed?access_token=%s&max_id=%d&min_id=%d',
         'user_recent' => 'https://api.instagram.com/v1/users/%d/media/recent/?access_token=%s&max_id=%d&min_id=%d&max_timestamp=%d&min_timestamp=%d',
@@ -63,7 +66,18 @@ class Instagram {
     protected $_config = array();
 
     /**
-     * Access token
+     * Whether all response are sent as JSON or decoded
+     */
+    protected $_arrayResponses = false;
+
+    /**
+     * OAuth token
+     * @var string
+     */
+    protected $_oauthToken = null;
+
+    /**
+     * OAuth token
      * @var string
      */
     protected $_accessToken = null;
@@ -78,41 +92,26 @@ class Instagram {
      * Constructor needs to receive the config as an array
      * @param mixed $config
      */
-    public function __construct($config = null) {
+    public function __construct($config = null, $arrayResponses = false) {
         $this->_config = $config;
+        $this->_arrayResponses = $arrayResponses;
         if (empty($config)) {
             throw new InstagramException('Configuration params are empty or not an array.');
         }
     }
 
     /**
-     * The init method is triggered on every call to retrieve the
-     * access token in case is not in the current instance.
-     */
-    protected function _init() {
-        // Requests the OAuth token if none passed 
-        if ($this->_accessToken == null) {
-            $this->_accessToken = json_decode($this->_getOauthToken())->access_token;
-        }
-    }
-
-    /**
      * Instantiates the internal HTTP client
-     * @param string $url
+     * @param string $uri
      * @param string $method
      */
-    protected function _initHttpClient($url, $method = Zend_Http_Client::GET) {
-        $this->_httpClient = new Zend_Http_Client($url);
+    protected function _initHttpClient($uri, $method = CurlHttpClient::GET) {
+        if ($this->_httpClient == null) {
+            $this->_httpClient = new CurlHttpClient($uri);
+        } else {
+            $this->_httpClient->setUri($uri);
+        }
         $this->_httpClient->setMethod($method);
-    }
-
-    /**
-     * Sets a post param to be setn along with the client request
-     * @param string $name
-     * @param mixed $value
-     */
-    protected function _setHttpClientPostParam($name, $value) {
-        $this->_httpClient->setParameterPost($name, $value);
     }
 
     /**
@@ -120,35 +119,51 @@ class Instagram {
      * @return string
      */
     protected function _getHttpClientResponse() {
-        return $this->_httpClient->request()->getBody();
+        return $this->_httpClient->getResponse();
     }
 
     /**
-     * Retrieves the OAuth token to be used in every request
-     * @return string
+     * Retrieves the authorization code to be used in every request
+     * @return string. The JSON encoded OAuth token
      */
-    protected function _getOauthToken() {
-        $this->_initHttpClient($this->_config['site_url'], Zend_Http_Client::POST);
-        $this->_setHttpClientPostParam('client_id', $this->_config['client_id']);
-        $this->_setHttpClientPostParam('client_secret', $this->_config['client_secret']);
-        $this->_setHttpClientPostParam('grant_type', $this->_config['grant_type']);
-        $this->_setHttpClientPostParam('redirect_uri', $this->_config['redirect_uri']);
-        $this->_setHttpClientPostParam('code', $this->getCode());
+    protected function _setOauthToken() {
+        $this->_initHttpClient($this->_endpointUrls['access_token'], CurlHttpClient::POST);
+        $this->_httpClient->setPostParam('client_id', $this->_config['client_id']);
+        $this->_httpClient->setPostParam('client_secret', $this->_config['client_secret']);
+        $this->_httpClient->setPostParam('grant_type', $this->_config['grant_type']);
+        $this->_httpClient->setPostParam('redirect_uri', $this->_config['redirect_uri']);
+        $this->_httpClient->setPostParam('code', $this->getAccessCode());
 
-        return $this->_getHttpClientResponse();
+        $this->_oauthToken = $this->_getHttpClientResponse();
     }
 
     /**
-     * Returns the access token
+     * Return the decoded plain access token value
+     * from the OAuth JSON encoded token.
      * @return string
      */
     public function getAccessToken() {
+        if ($this->_oauthToken == null) {
+            $this->_setOauthToken();
+        }
+
+        if ($this->_accessToken == null) {
+            $this->_accessToken = json_decode($this->_oauthToken)->access_token;
+            echo $this->_accessToken . "<br>\n";
+        }
+
         return $this->_accessToken;
     }
 
     /**
-     * Sets the OAuth token to avoid consecutive explicit
-     * authentication requests
+     * Gets the code param received during the authorization step
+     */
+    protected function getAccessCode() {
+        return $_GET[self::RESPONSE_CODE_PARAM];
+    }
+
+    /**
+     * Sets the access token response from OAuth
      * @param string $accessToken
      */
     public function setAccessToken($accessToken) {
@@ -156,20 +171,27 @@ class Instagram {
     }
 
     /**
-     * Gets the code param received during the authorization step
+     * Surf to Instagram credentials verification page.
+     * If the user is already authenticated, redirects to
+     * the URI set in the redirect_uri config param.
+     * @return string
      */
-    public function getCode() {
-        return $_GET[self::RESPONSE_CODE_PARAM];
+    public function openAuthorizationUrl() {
+        $authorizationUrl = sprintf($this->_endpointUrls['authorize'],
+            $this->_config['client_id'],
+            $this->_config['redirect_uri'],
+            self::RESPONSE_CODE_PARAM);
+
+        header('Location: ' . $authorizationUrl);
+        exit(1);
     }
 
-     /**
+    /**
       * Get basic information about a user.
       * @param $id
-      * @param $oauthToken
       */
     public function getUser($id) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['user'], $id, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['user'], $id, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -180,8 +202,7 @@ class Instagram {
      * @param integer $minId. Return media before this minId.
      */
     public function getUserFeed($maxId = null, $minId = null) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['user_feed'], $this->_accessToken, $maxId, $minId);
+        $endpointUrl = sprintf($this->_endpointUrls['user_feed'], $this->getAccessToken(), $maxId, $minId);
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -195,8 +216,7 @@ class Instagram {
      * @param $minTimestamp. Return media after this UNIX timestamp
      */
     public function getUserRecent($id, $maxId = '', $minId = '', $maxTimestamp = '', $minTimestamp = '') {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['user_recent'], $id, $this->_accessToken, $maxId, $minId, $maxTimestamp, $minTimestamp);
+        $endpointUrl = sprintf($this->_endpointUrls['user_recent'], $id, $this->getAccessToken(), $maxId, $minId, $maxTimestamp, $minTimestamp);
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -206,8 +226,7 @@ class Instagram {
      * @param string $name. A query string
      */
     public function searchUser($name) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['user_search'], $name, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['user_search'], $name, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -217,8 +236,7 @@ class Instagram {
      * @param integer $id. The user id
      */
     public function getUserFollows($id) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['user_follows'], $id, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['user_follows'], $id, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -228,8 +246,7 @@ class Instagram {
      * @param integer $id
      */
     public function getUserFollowedBy($id) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['user_followed_by'], $id, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['user_followed_by'], $id, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -238,8 +255,7 @@ class Instagram {
      * List the users who have requested this user's permission to follow
      */
     public function getUserRequestedBy() {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['user_requested_by'], $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['user_requested_by'], $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -249,8 +265,7 @@ class Instagram {
      * @param integer $id
      */
     public function getUserRelationship($id) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['user_relationship'], $id, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['user_relationship'], $id, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -262,8 +277,7 @@ class Instagram {
      * @param string $action. One of follow/unfollow/block/unblock/approve/deny
      */
     public function modifyUserRelationship($id, $action) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['modify_user_relationship'], $id, $action, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['modify_user_relationship'], $id, $action, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl, Zend_Http_Client::POST);
         return $this->_getHttpClientResponse();
     }
@@ -273,8 +287,7 @@ class Instagram {
      * @param integer $mediaId
      */
     public function getMedia($id) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['media'], $id, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['media'], $id, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -288,8 +301,7 @@ class Instagram {
      * @param integer $distance
      */
     public function mediaSearch($lat, $lng, $maxTimestamp = '', $minTimestamp = '', $distance = '') {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['media_search'], $lat, $lng, $maxTimestamp, $minTimestamp, $distance, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['media_search'], $lat, $lng, $maxTimestamp, $minTimestamp, $distance, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -298,8 +310,7 @@ class Instagram {
      * Get a list of what media is most popular at the moment.
      */
     public function getPopularMedia() {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['media_popular'], $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['media_popular'], $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -309,8 +320,7 @@ class Instagram {
      * @param integer $id
      */
     public function getMediaComments($id) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['media_comments'], $id, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['media_comments'], $id, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -322,8 +332,8 @@ class Instagram {
      */
     public function postMediaComment($id, $text) {
         $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['post_media_comment'], $id, $text, $this->_accessToken);
-        $this->_initHttpClient($endpointUrl, Zend_Http_Client::POST);
+        $endpointUrl = sprintf($this->_endpointUrls['post_media_comment'], $id, $text, $this->getAccessToken());
+        $this->_initHttpClient($endpointUrl, CurlHttpClient::POST);
         return $this->_getHttpClientResponse();
     }
 
@@ -333,9 +343,8 @@ class Instagram {
      * @param integer $commentId
      */
     public function deleteComment($mediaId, $commentId) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['delete_media_comment'], $mediaId, $commentId, $this->_accessToken);
-        $this->_initHttpClient($endpointUrl, Zend_Http_Client::DELETE);
+        $endpointUrl = sprintf($this->_endpointUrls['delete_media_comment'], $mediaId, $commentId, $this->getAccessToken());
+        $this->_initHttpClient($endpointUrl, CurlHttpClient::DELETE);
         return $this->_getHttpClientResponse();
     }
 
@@ -344,8 +353,7 @@ class Instagram {
      * @param integer $mediaId
      */
     public function getLikes($mediaId) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['likes'], $mediaId, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['likes'], $mediaId, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -355,10 +363,9 @@ class Instagram {
      * @param integer $mediaId
      */
     public function postLike($mediaId) {
-        $this->_init();
         $endpointUrl = sprintf($this->_endpointUrls['post_like'], $mediaId);
-        $this->_initHttpClient($endpointUrl, Zend_Http_Client::POST);
-        $this->_setHttpClientPostParam('access_token', $this->_accessToken);
+        $this->_initHttpClient($endpointUrl, CurlHttpClient::POST);
+        $this->_httpClient->setParameterPost('access_token', $this->getAccessToken());
         return $this->_getHttpClientResponse();
     }
 
@@ -367,9 +374,8 @@ class Instagram {
      * @param integer $mediaId
      */
     public function removeLike($mediaId) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['remove_like'], $mediaId, $this->_accessToken);
-        $this->_initHttpClient($endpointUrl, Zend_Http_Client::DELETE);
+        $endpointUrl = sprintf($this->_endpointUrls['remove_like'], $mediaId, $this->getAccessToken());
+        $this->_initHttpClient($endpointUrl, CurlHttpClient::DELETE);
         return $this->_getHttpClientResponse();
     }
 
@@ -378,8 +384,7 @@ class Instagram {
      * @param string $tagName
      */
     public function getTags($tagName) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['tags'], $tagName, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['tags'], $tagName, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -391,8 +396,7 @@ class Instagram {
      * @param integer $minId
      */
     public function getRecentTags($tagName, $maxId = '', $minId = '') {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['tags_recent'], $tagName, $maxId, $minId, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['tags_recent'], $tagName, $maxId, $minId, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -402,8 +406,7 @@ class Instagram {
      * @param string $tagName
      */
     public function searchTags($tagName) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['tags_search'], urlencode($tagName), $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['tags_search'], urlencode($tagName), $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -413,8 +416,7 @@ class Instagram {
      * @param integer $id
      */
     public function getLocation($id) {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['locations'], $id, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['locations'], $id, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -424,8 +426,7 @@ class Instagram {
      * @param integer $locationId
      */
     public function getLocationRecentMedia($id, $maxId = '', $minId = '', $maxTimestamp = '', $minTimestamp = '') {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['locations_recent'], $id, $maxId, $minId, $maxTimestamp, $minTimestamp, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['locations_recent'], $id, $maxId, $minId, $maxTimestamp, $minTimestamp, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
@@ -439,8 +440,7 @@ class Instagram {
      * @param integer $distance
      */
     public function searchLocation($lat, $lng, $foursquareId = '', $distance = '') {
-        $this->_init();
-        $endpointUrl = sprintf($this->_endpointUrls['locations_search'], $lat, $lng, $foursquareId, $distance, $this->_accessToken);
+        $endpointUrl = sprintf($this->_endpointUrls['locations_search'], $lat, $lng, $foursquareId, $distance, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }

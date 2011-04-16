@@ -1,11 +1,4 @@
 ## This is a very simple instagram API implementation in PHP.
-This first version depends on the Zend_Http_Client component from Zend Framework[1]. The code was made in such a way that it is HTTP client agnostic, but right now I'm working on an specific CURL-based client implementation so we don't depend on Zend Framework.
 
-You don't need to download the whole Zend Framework stack to make this implementation work. Just make sure you have the HTTP Client[2] and everything under the 'Client' tree[3], anyway, the minimal version is very small and you can download it right from here[4]
+Make sure you check out the example.php file that is provided along with the code which is almost self explanatory.
 
-If you take a look at the code, you'll notice that every method is mostly similar, with the exception of the endpoint, the number of params passed and the HTTP method performed. Yes, I did a first version of the API without a single one but a __call() method which, based on the endpoints mapping, created the right request and sent it to the server. After using it for a while, I just thought it was too simple, error prone and didn't help the auto-complete feature when you use a fancy IDE. This code is open sourced, so any ideas or suggestions will be welcomed, hope you use it and enjoy it!
-
-[1] http://framework.zend.com/
-[2] http://framework.zend.com/svn/framework/standard/trunk/library/Zend/Http/Client.php
-[3] http://framework.zend.com/svn/framework/standard/trunk/library/Zend/Http/Client/
-[4] http://framework.zend.com/download/latest
