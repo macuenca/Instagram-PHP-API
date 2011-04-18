@@ -50,7 +50,7 @@ class Instagram {
         'post_media_comment' => 'https://api.instagram.com/v1/media/%d/comments?access_token=%s',
         'delete_media_comment' => 'https://api.instagram.com/v1/media/%d/comments?comment_id=%d&access_token=%s',
         'likes' => 'https://api.instagram.com/v1/media/%d/likes?access_token=%s',
-        'post_like' => 'https://api.instagram.com/v1/media/%d/likes,',
+        'post_like' => 'https://api.instagram.com/v1/media/%d/likes',
         'remove_like' => 'https://api.instagram.com/v1/media/%d/likes?access_token=%s',
         'tags' => 'https://api.instagram.com/v1/tags/%s?access_token=%s',
         'tags_recent' => 'https://api.instagram.com/v1/tags/%s/media/recent?max_id=%d&min_id=%d&access_token=%s',
@@ -81,6 +81,12 @@ class Instagram {
      * @var string
      */
     protected $_accessToken = null;
+    
+    /**
+     * OAuth user object
+     * @var object
+     */
+    protected $_currentUser = null;
 
     /**
      * Holds the HTTP client instance
@@ -143,16 +149,37 @@ class Instagram {
      * @return string
      */
     public function getAccessToken() {
-        if ($this->_oauthToken == null) {
-            $this->_setOauthToken();
-        }
-
+      
         if ($this->_accessToken == null) {
+          
+            if ($this->_oauthToken == null) {
+                $this->_setOauthToken();
+            }
+          
             $this->_accessToken = json_decode($this->_oauthToken)->access_token;
             echo $this->_accessToken . "<br>\n";
         }
 
         return $this->_accessToken;
+    }
+    
+    /**
+     * Return the decoded user object
+     * from the OAuth JSON encoded token
+     * @return object
+     */
+    public function getCurrentUser() {
+      
+        if ($this->_currentUser == null) {
+            
+            if ($this->_oauthToken == null) {
+                $this->_setOauthToken();
+            }
+            
+            $this->_currentUser = json_decode($this->_oauthToken)->user;
+        }
+
+        return $this->_currentUser;
     }
 
     /**
@@ -365,7 +392,7 @@ class Instagram {
     public function postLike($mediaId) {
         $endpointUrl = sprintf($this->_endpointUrls['post_like'], $mediaId);
         $this->_initHttpClient($endpointUrl, CurlHttpClient::POST);
-        $this->_httpClient->setParameterPost('access_token', $this->getAccessToken());
+        $this->_httpClient->setPostParam('access_token', $this->getAccessToken());
         return $this->_getHttpClientResponse();
     }
 
