@@ -149,7 +149,6 @@ class Instagram {
      * @return string
      */
     public function getAccessToken() {
-      
         if ($this->_accessToken == null) {
           
             if ($this->_oauthToken == null) {
@@ -157,7 +156,6 @@ class Instagram {
             }
           
             $this->_accessToken = json_decode($this->_oauthToken)->access_token;
-            echo $this->_accessToken . "<br>\n";
         }
 
         return $this->_accessToken;
@@ -169,7 +167,6 @@ class Instagram {
      * @return object
      */
     public function getCurrentUser() {
-      
         if ($this->_currentUser == null) {
             
             if ($this->_oauthToken == null) {
