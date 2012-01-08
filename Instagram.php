@@ -35,7 +35,7 @@ class Instagram {
         'authorize' => 'https://api.instagram.com/oauth/authorize/?client_id=%s&redirect_uri=%s&response_type=%s',
         'access_token' => 'https://api.instagram.com/oauth/access_token',
         'user' => 'https://api.instagram.com/v1/users/%d/?access_token=%s',
-        'user_feed' => 'https://api.instagram.com/v1/users/self/feed?access_token=%s&max_id=%d&min_id=%d',
+        'user_feed' => 'https://api.instagram.com/v1/users/self/feed?%s',
         'user_recent' => 'https://api.instagram.com/v1/users/%d/media/recent/?access_token=%s&max_id=%d&min_id=%d&max_timestamp=%d&min_timestamp=%d',
         'user_search' => 'https://api.instagram.com/v1/users/search?q=%s&access_token=%s',
         'user_follows' => 'https://api.instagram.com/v1/users/%d/follows?access_token=%s',
@@ -201,13 +201,20 @@ class Instagram {
      * @return string
      */
     public function openAuthorizationUrl() {
-        $authorizationUrl = sprintf($this->_endpointUrls['authorize'],
+        header('Location: ' . $this->getAuthorizationUrl());
+        exit(1);
+    }
+    
+    /**
+     * Generate Instagram credentials verification page URL.
+     * Usefull for creating a link to the Instagram authentification page.
+     * @return string
+     */
+    public function getAuthorizationUrl() {
+        return sprintf($this->_endpointUrls['authorize'],
             $this->_config['client_id'],
             $this->_config['redirect_uri'],
             self::RESPONSE_CODE_PARAM);
-
-        header('Location: ' . $authorizationUrl);
-        exit(1);
     }
 
     /**
@@ -225,8 +232,8 @@ class Instagram {
      * @param integer $maxId. Return media after this maxId.
      * @param integer $minId. Return media before this minId.
      */
-    public function getUserFeed($maxId = null, $minId = null) {
-        $endpointUrl = sprintf($this->_endpointUrls['user_feed'], $this->getAccessToken(), $maxId, $minId);
+    public function getUserFeed($maxId = null, $minId = null, $count = null) {
+        $endpointUrl = sprintf($this->_endpointUrls['user_feed'], http_build_query(array('access_token' => $this->getAccessToken(), 'max_id' => $maxId, 'min_id' => $minId, 'count' => $count)));
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
