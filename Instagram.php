@@ -309,7 +309,9 @@ class Instagram {
      */
     public function modifyUserRelationship($id, $action) {
         $endpointUrl = sprintf($this->_endpointUrls['modify_user_relationship'], $id, $action, $this->getAccessToken());
-        $this->_initHttpClient($endpointUrl, Zend_Http_Client::POST);
+        $this->_initHttpClient($endpointUrl, CurlHttpClient::POST);
+        $this->_httpClient->setPostParam("action",$action);
+        $this->_httpClient->setPostParam("access_token",$this->getAccessToken());
         return $this->_getHttpClientResponse();
     }
 
