@@ -265,6 +265,7 @@ class Instagram {
     /**
      * Get the list of users this user follows.
      * @param integer $id. The user id
+     * @param integer $cursor. Cursor to paginate results
      */
     public function getUserFollows($id, $cursor = '') {
         $endpointUrl = sprintf($this->_endpointUrls['user_follows'], $id, $this->getAccessToken(), $cursor);
