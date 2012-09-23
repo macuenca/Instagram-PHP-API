@@ -38,7 +38,7 @@ class Instagram {
         'user_feed' => 'https://api.instagram.com/v1/users/self/feed?%s',
         'user_recent' => 'https://api.instagram.com/v1/users/%s/media/recent/?access_token=%s&max_id=%s&min_id=%s&max_timestamp=%s&min_timestamp=%s',
         'user_search' => 'https://api.instagram.com/v1/users/search?q=%s&access_token=%s',
-        'user_follows' => 'https://api.instagram.com/v1/users/%d/follows?access_token=%s',
+        'user_follows' => 'https://api.instagram.com/v1/users/%d/follows?access_token=%s&cursor=%s',
         'user_followed_by' => 'https://api.instagram.com/v1/users/%d/followed-by?access_token=%s',
         'user_requested_by' => 'https://api.instagram.com/v1/users/self/requested-by?access_token=%s',
         'user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?access_token=%s',
@@ -265,9 +265,10 @@ class Instagram {
     /**
      * Get the list of users this user follows.
      * @param integer $id. The user id
+     * @param integer $cursor. Cursor to paginate results
      */
-    public function getUserFollows($id) {
-        $endpointUrl = sprintf($this->_endpointUrls['user_follows'], $id, $this->getAccessToken());
+    public function getUserFollows($id, $cursor = '') {
+        $endpointUrl = sprintf($this->_endpointUrls['user_follows'], $id, $this->getAccessToken(), $cursor);
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
