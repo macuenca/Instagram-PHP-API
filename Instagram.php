@@ -44,7 +44,7 @@ class Instagram {
         'user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?access_token=%s',
         'modify_user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?action=%s&access_token=%s',
         'media' => 'https://api.instagram.com/v1/media/%d?access_token=%s',
-        'media_search' => 'https://api.instagram.com/v1/media/search?lat=%s&lng=%s&max_timestamp=%d&min_timestamp=%d&distance=%d&access_token=%s',
+        'media_search' => 'https://api.instagram.com/v1/media/search?lat=%s&lng=%s&max_timestamp=%s&min_timestamp=%s&distance=%s&access_token=%s',
         'media_popular' => 'https://api.instagram.com/v1/media/popular?access_token=%s',
         'media_comments' => 'https://api.instagram.com/v1/media/%d/comments?access_token=%s',
         'post_media_comment' => 'https://api.instagram.com/v1/media/%d/comments?access_token=%s',
@@ -53,11 +53,11 @@ class Instagram {
         'post_like' => 'https://api.instagram.com/v1/media/%d/likes',
         'remove_like' => 'https://api.instagram.com/v1/media/%d/likes?access_token=%s',
         'tags' => 'https://api.instagram.com/v1/tags/%s?access_token=%s',
-        'tags_recent' => 'https://api.instagram.com/v1/tags/%s/media/recent?max_id=%d&min_id=%d&access_token=%s',
+        'tags_recent' => 'https://api.instagram.com/v1/tags/%s/media/recent?max_id=%s&min_id=%s&access_token=%s',
         'tags_search' => 'https://api.instagram.com/v1/tags/search?q=%s&access_token=%s',
         'locations' => 'https://api.instagram.com/v1/locations/%d?access_token=%s',
-        'locations_recent' => 'https://api.instagram.com/v1/locations/%d/media/recent/?max_id=%d&min_id=%d&max_timestamp=%d&min_timestamp=%d&access_token=%s',
-        'locations_search' => 'https://api.instagram.com/v1/locations/search?lat=%s&lng=%s&foursquare_id=%d&distance=%d&access_token=%s',
+        'locations_recent' => 'https://api.instagram.com/v1/locations/%d/media/recent/?max_id=%s&min_id=%s&max_timestamp=%s&min_timestamp=%s&access_token=%s',
+        'locations_search' => 'https://api.instagram.com/v1/locations/search?lat=%s&lng=%s&foursquare_id=%s&distance=%s&access_token=%s',
     );
 
     /**
