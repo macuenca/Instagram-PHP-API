@@ -34,12 +34,12 @@ class Instagram {
     protected $_endpointUrls = array(
         'authorize' => 'https://api.instagram.com/oauth/authorize/?client_id=%s&redirect_uri=%s&response_type=%s',
         'access_token' => 'https://api.instagram.com/oauth/access_token',
-        'user' => 'https://api.instagram.com/v1/users/%d/?access_token=%s',
+        'user' => 'https://api.instagram.com/v1/users/%s/?access_token=%s',
         'user_feed' => 'https://api.instagram.com/v1/users/self/feed?%s',
         'user_recent' => 'https://api.instagram.com/v1/users/%s/media/recent/?access_token=%s&max_id=%s&min_id=%s&max_timestamp=%s&min_timestamp=%s',
         'user_search' => 'https://api.instagram.com/v1/users/search?q=%s&access_token=%s',
-        'user_follows' => 'https://api.instagram.com/v1/users/%d/follows?access_token=%s&cursor=%s',
-        'user_followed_by' => 'https://api.instagram.com/v1/users/%d/followed-by?access_token=%s',
+        'user_follows' => 'https://api.instagram.com/v1/users/%s/follows?access_token=%s&cursor=%s',
+        'user_followed_by' => 'https://api.instagram.com/v1/users/%s/followed-by?access_token=%s',
         'user_requested_by' => 'https://api.instagram.com/v1/users/self/requested-by?access_token=%s',
         'user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?access_token=%s',
         'modify_user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?action=%s&access_token=%s',
@@ -264,7 +264,7 @@ class Instagram {
 
     /**
      * Get the list of users this user follows.
-     * @param integer $id. The user id
+     * @param $id. The user id. "self" is current user
      * @param integer $cursor. Cursor to paginate results
      */
     public function getUserFollows($id, $cursor = '') {
@@ -275,7 +275,7 @@ class Instagram {
 
     /**
      * Get the list of users this user is followed by.
-     * @param integer $id
+     * @param $id. The user id. "self" is current user
      */
     public function getUserFollowedBy($id) {
         $endpointUrl = sprintf($this->_endpointUrls['user_followed_by'], $id, $this->getAccessToken());
