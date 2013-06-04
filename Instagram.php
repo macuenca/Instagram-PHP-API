@@ -59,7 +59,8 @@ class Instagram {
         'locations' => 'https://api.instagram.com/v1/locations/%d?access_token=%s',
         'locations_recent' => 'https://api.instagram.com/v1/locations/%d/media/recent/?max_id=%s&min_id=%s&max_timestamp=%s&min_timestamp=%s&access_token=%s',
         'locations_search' => 'https://api.instagram.com/v1/locations/search?lat=%s&lng=%s&foursquare_id=%s&distance=%s&access_token=%s',
-        'subscriptions' => 'https://api.instagram.com/v1/subscriptions/'
+        'create_subscriptions' => 'https://api.instagram.com/v1/subscriptions',
+        'manage_subscriptions' => 'https://api.instagram.com/v1/subscriptions?%s'
     );
 
     /**
@@ -221,14 +222,13 @@ class Instagram {
 
     /**
       * Setup subscription
-      * @param $id
+      * @param $params array
       */
 	public function createSubscription($params) {
-        $this->_initHttpClient($this->_endpointUrls['subscriptions'], CurlHttpClient::POST);
+        $this->_initHttpClient($this->_endpointUrls['create_subscriptions'], CurlHttpClient::POST);
         $this->_httpClient->setPostParam('client_id', $this->_config['client_id']);
         $this->_httpClient->setPostParam('client_secret', $this->_config['client_secret']);
         $this->_httpClient->setPostParam('verify_token', $this->_config['verify_token']);
-		
         $this->_httpClient->setPostParam('callback_url', $params['callback_url']);
         $this->_httpClient->setPostParam('object', $params['object']);
 		$this->_httpClient->setPostParam('object_id', $params['object_id']);
@@ -237,27 +237,35 @@ class Instagram {
 	}
 	
     /**
-      * Setup subscription
+      * List Subscriptions
       * @param $id
       */
 	public function listSubscriptions() {
-		$uri = $this->_endpointUrls['subscriptions']."?client_id=".$this->_config['client_id']."&client_secret=".$this->_config['client_secret'];
+		$getParams = array(
+			'client_id' => $this->_config['client_id'],
+			'client_secret' => $this->_config['client_secret']
+		);
+		$uri = sprintf($this->_endpointUrls['manage_subscriptions'], http_build_query($getParams));
 		$this->_initHttpClient($uri, CurlHttpClient::GET);
 		return $this->_getHttpClientResponse();
 	}
 	
     /**
-      * Setup subscription
-      * @param $id
+      * Delete Subscription by id or type.
+	  *  id=1 || object=all|tag|user
+      * @param $params array
       */
 	public function deleteSubscription($params) {
-		// id=1 || object=all|tag|user
-		$uri = $this->_endpointUrls['subscriptions']."?client_id=".$this->_config['client_id']."&client_secret=".$this->_config['client_secret'];
+		$getParams = array(
+			'client_id' => $this->_config['client_id'],
+			'client_secret' => $this->_config['client_secret']
+		);
 		if(isset($params['id'])) {
-			$uri .= "&id=".$params['id'];
+			$getParams['id'] = $params['id'];
 		} else {
-			$uri .= "&object=".$params['object'];
-		}
+			$getParams['object'] = $params['object'];
+		}		
+		$uri = sprintf($this->_endpointUrls['manage_subscriptions'], http_build_query($getParams));
 		$this->_initHttpClient($uri, CurlHttpClient::DELETE);
 		return $this->_getHttpClientResponse();
 	}
