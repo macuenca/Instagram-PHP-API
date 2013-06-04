@@ -36,12 +36,13 @@ class Instagram {
         'access_token' => 'https://api.instagram.com/oauth/access_token',
         'user' => 'https://api.instagram.com/v1/users/%s/?access_token=%s',
         'user_feed' => 'https://api.instagram.com/v1/users/self/feed?%s',
-        'user_recent' => 'https://api.instagram.com/v1/users/%s/media/recent/?access_token=%s&max_id=%s&min_id=%s&max_timestamp=%s&min_timestamp=%s&count=%s',
+        'user_recent' => 'https://api.instagram.com/v1/users/%s/media/recent/?access_token=%s&max_id=%s&min_id=%s&max_timestamp=%s&min_timestamp=%s',
         'user_search' => 'https://api.instagram.com/v1/users/search?q=%s&access_token=%s',
         'user_follows' => 'https://api.instagram.com/v1/users/%s/follows?access_token=%s&cursor=%s',
         'user_followed_by' => 'https://api.instagram.com/v1/users/%s/followed-by?access_token=%s',
         'user_requested_by' => 'https://api.instagram.com/v1/users/self/requested-by?access_token=%s',
         'user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?access_token=%s',
+        'user_liked' => 'https://api.instagram.com/v1/users/self/media/liked?access_token=%s',
         'modify_user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?action=%s&access_token=%s',
         'media' => 'https://api.instagram.com/v1/media/%d?access_token=%s',
         'media_search' => 'https://api.instagram.com/v1/media/search?lat=%s&lng=%s&max_timestamp=%s&min_timestamp=%s&distance=%s&access_token=%s',
@@ -58,6 +59,7 @@ class Instagram {
         'locations' => 'https://api.instagram.com/v1/locations/%d?access_token=%s',
         'locations_recent' => 'https://api.instagram.com/v1/locations/%d/media/recent/?max_id=%s&min_id=%s&max_timestamp=%s&min_timestamp=%s&access_token=%s',
         'locations_search' => 'https://api.instagram.com/v1/locations/search?lat=%s&lng=%s&foursquare_id=%s&distance=%s&access_token=%s',
+        'subscriptions' => 'https://api.instagram.com/v1/subscriptions/'
     );
 
     /**
@@ -218,6 +220,49 @@ class Instagram {
     }
 
     /**
+      * Setup subscription
+      * @param $id
+      */
+	public function createSubscription($params) {
+        $this->_initHttpClient($this->_endpointUrls['subscriptions'], CurlHttpClient::POST);
+        $this->_httpClient->setPostParam('client_id', $this->_config['client_id']);
+        $this->_httpClient->setPostParam('client_secret', $this->_config['client_secret']);
+        $this->_httpClient->setPostParam('verify_token', $this->_config['verify_token']);
+		
+        $this->_httpClient->setPostParam('callback_url', $params['callback_url']);
+        $this->_httpClient->setPostParam('object', $params['object']);
+		$this->_httpClient->setPostParam('object_id', $params['object_id']);
+        $this->_httpClient->setPostParam('aspect', $params['aspect']);
+        return $this->_getHttpClientResponse();
+	}
+	
+    /**
+      * Setup subscription
+      * @param $id
+      */
+	public function listSubscriptions() {
+		$uri = $this->_endpointUrls['subscriptions']."?client_id=".$this->_config['client_id']."&client_secret=".$this->_config['client_secret'];
+		$this->_initHttpClient($uri, CurlHttpClient::GET);
+		return $this->_getHttpClientResponse();
+	}
+	
+    /**
+      * Setup subscription
+      * @param $id
+      */
+	public function deleteSubscription($params) {
+		// id=1 || object=all|tag|user
+		$uri = $this->_endpointUrls['subscriptions']."?client_id=".$this->_config['client_id']."&client_secret=".$this->_config['client_secret'];
+		if(isset($params['id'])) {
+			$uri .= "&id=".$params['id'];
+		} else {
+			$uri .= "&object=".$params['object'];
+		}
+		$this->_initHttpClient($uri, CurlHttpClient::DELETE);
+		return $this->_getHttpClientResponse();
+	}
+
+    /**
       * Get basic information about a user.
       * @param $id
       */
@@ -234,6 +279,16 @@ class Instagram {
      */
     public function getUserFeed($maxId = null, $minId = null, $count = null) {
         $endpointUrl = sprintf($this->_endpointUrls['user_feed'], http_build_query(array('access_token' => $this->getAccessToken(), 'max_id' => $maxId, 'min_id' => $minId, 'count' => $count)));
+        $this->_initHttpClient($endpointUrl);
+        return $this->_getHttpClientResponse();
+    }
+	
+    /**
+     * Get information about the current user's relationship (follow/following/etc) to another user.
+     * @param n/a
+     */
+    public function getUserLiked() {
+        $endpointUrl = sprintf($this->_endpointUrls['user_liked'], $this->getAccessToken());
         $this->_initHttpClient($endpointUrl);
         return $this->_getHttpClientResponse();
     }
