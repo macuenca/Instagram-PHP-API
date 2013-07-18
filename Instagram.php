@@ -428,7 +428,6 @@ class Instagram {
      * @param string $text
      */
     public function postMediaComment($id, $text) {
-        $this->_init();
         $endpointUrl = sprintf($this->_endpointUrls['post_media_comment'], $id, $text, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl, CurlHttpClient::POST);
         return $this->_getHttpClientResponse();
