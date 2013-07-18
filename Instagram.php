@@ -41,23 +41,23 @@ class Instagram {
         'user_follows' => 'https://api.instagram.com/v1/users/%s/follows?access_token=%s&cursor=%s',
         'user_followed_by' => 'https://api.instagram.com/v1/users/%s/followed-by?access_token=%s',
         'user_requested_by' => 'https://api.instagram.com/v1/users/self/requested-by?access_token=%s',
-        'user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?access_token=%s',
+        'user_relationship' => 'https://api.instagram.com/v1/users/%s/relationship?access_token=%s',
         'user_liked' => 'https://api.instagram.com/v1/users/self/media/liked?access_token=%s',
-        'modify_user_relationship' => 'https://api.instagram.com/v1/users/%d/relationship?action=%s&access_token=%s',
-        'media' => 'https://api.instagram.com/v1/media/%d?access_token=%s',
+        'modify_user_relationship' => 'https://api.instagram.com/v1/users/%s/relationship?action=%s&access_token=%s',
+        'media' => 'https://api.instagram.com/v1/media/%s?access_token=%s',
         'media_search' => 'https://api.instagram.com/v1/media/search?lat=%s&lng=%s&max_timestamp=%s&min_timestamp=%s&distance=%s&access_token=%s',
         'media_popular' => 'https://api.instagram.com/v1/media/popular?access_token=%s',
-        'media_comments' => 'https://api.instagram.com/v1/media/%d/comments?access_token=%s',
-        'post_media_comment' => 'https://api.instagram.com/v1/media/%d/comments?access_token=%s',
-        'delete_media_comment' => 'https://api.instagram.com/v1/media/%d/comments?comment_id=%d&access_token=%s',
-        'likes' => 'https://api.instagram.com/v1/media/%d/likes?access_token=%s',
-        'post_like' => 'https://api.instagram.com/v1/media/%d/likes',
-        'remove_like' => 'https://api.instagram.com/v1/media/%d/likes?access_token=%s',
+        'media_comments' => 'https://api.instagram.com/v1/media/%s/comments?access_token=%s',
+        'post_media_comment' => 'https://api.instagram.com/v1/media/%s/comments?access_token=%s',
+        'delete_media_comment' => 'https://api.instagram.com/v1/media/%s/comments?comment_id=%s&access_token=%s',
+        'likes' => 'https://api.instagram.com/v1/media/%s/likes?access_token=%s',
+        'post_like' => 'https://api.instagram.com/v1/media/%s/likes',
+        'remove_like' => 'https://api.instagram.com/v1/media/%s/likes?access_token=%s',
         'tags' => 'https://api.instagram.com/v1/tags/%s?access_token=%s',
         'tags_recent' => 'https://api.instagram.com/v1/tags/%s/media/recent?max_id=%s&min_id=%s&access_token=%s',
         'tags_search' => 'https://api.instagram.com/v1/tags/search?q=%s&access_token=%s',
-        'locations' => 'https://api.instagram.com/v1/locations/%d?access_token=%s',
-        'locations_recent' => 'https://api.instagram.com/v1/locations/%d/media/recent/?max_id=%s&min_id=%s&max_timestamp=%s&min_timestamp=%s&access_token=%s',
+        'locations' => 'https://api.instagram.com/v1/locations/%s?access_token=%s',
+        'locations_recent' => 'https://api.instagram.com/v1/locations/%s/media/recent/?max_id=%s&min_id=%s&max_timestamp=%s&min_timestamp=%s&access_token=%s',
         'locations_search' => 'https://api.instagram.com/v1/locations/search?lat=%s&lng=%s&foursquare_id=%s&distance=%s&access_token=%s',
         'create_subscriptions' => 'https://api.instagram.com/v1/subscriptions',
         'manage_subscriptions' => 'https://api.instagram.com/v1/subscriptions?%s'
@@ -428,7 +428,6 @@ class Instagram {
      * @param string $text
      */
     public function postMediaComment($id, $text) {
-	$this->_init();
         $endpointUrl = sprintf($this->_endpointUrls['post_media_comment'], $id, $text, $this->getAccessToken());
         $this->_initHttpClient($endpointUrl, CurlHttpClient::POST);
         return $this->_getHttpClientResponse();
